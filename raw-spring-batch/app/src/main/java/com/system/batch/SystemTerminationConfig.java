@@ -1,4 +1,4 @@
-package com.system.batch.config;
+package com.system.batch;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -7,17 +7,17 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * ./gradlew bootRun --args='--spring.batch.job.name=systemTerminationSimulationJob'
+ * ./gradlew run --args="com.system.batch.SystemTerminationConfig systemTerminationSimulationJob"
  * <p>
  * 위의 명령어로 실행 가능
  */
-@Configuration
+@Import(BatchConfig.class)
 public class SystemTerminationConfig {
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
@@ -86,3 +86,4 @@ public class SystemTerminationConfig {
         .build();
   }
 }
+
