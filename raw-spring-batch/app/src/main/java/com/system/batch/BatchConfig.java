@@ -1,4 +1,4 @@
-package com.system.batch.config;
+package com.system.batch;
 
 import org.springframework.batch.core.configuration.support.DefaultBatchConfiguration;
 import org.springframework.context.annotation.Bean;
