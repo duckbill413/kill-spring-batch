@@ -1,4 +1,4 @@
-package com.system.batch.config.session2;
+package com.system.batch.session2;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
