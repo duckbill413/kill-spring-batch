@@ -87,3 +87,17 @@ Spring Batch
   ```
 - `executionDate`는 `yyyy-MM-dd`
 - `startTime`은 `yyyy-MM-ddThh:mm:ss` 형식을 사용
+
+3. `Enum` 파라미터 전달
+
+- 먼저, Enum 을 정의
+
+   ```java
+   public enum QuestDifficulty {EASY, NORMAL, HARD, EXTREME}
+   ```
+
+- 커맨드라인 실행
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=enumTerminationJob questDifficulty=HARD,com.system.batch.session2.EnumTerminatorConfig$QuestDifficulty'
+  ```
+  - `Enum` 클래스인 `QuestDifficulty` 를 `$` 기호를 통해 외부/내부 클래스를 구분
