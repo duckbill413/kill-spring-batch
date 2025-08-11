@@ -40,3 +40,42 @@ Spring Batch
 > 이 때도 트랜잭션이 사용되는데, 별도의 구성 변경 없이 PlatformTransactionManager 를 빈으로 정의할 경우,  
 > Step 의 비즈니스 로직 처리를 위한 트랜잭션과 메타데이터 관리를 위한 트랜잭션이 서로 다른 성격임에도 불구하고 같은
 > PlatformTransactionManager 빈을 사용하게 되어 의도치 않은 문제가 발생할 수 있음
+
+### JobParameters
+
+1. 커맨드라인에서 잡 파라미터 전달하기
+
+- 스프링 부트 3 과 스프링 배치 5를 기준으로 커맨드라인에서 Job 을 실행할 때의 파라미터 전달 방식
+
+   ```shell
+   ./gradlew bootRun --args='--spring.batch.job.name=dataProcessingJob inputFilePath=/data/input/users.csv,java.lang.String'
+  ```
+  `key=value,type` 으로 이루어진 잡 파라미터 전달 형태
+
+**JobParameters** 기본 표기법  
+`parameterName=parameterValue,parameterType,identificationFlag`
+
+- `parameterName`: 배치 Job 에서 파라미터를 찾을 때 사용할 key 값
+- `parameterValue`: 파라미터의 실제 값
+- `parameterType`: 파라미터의 타입 (`java.lang.String`, `java.lang.Integer` 와 같은 fully qualified name 사용). 파라미터 타입을 사용하지 않을 경우
+  `String` 타입으로 가정
+- `identificationFlag`: Spring Batch 에게 해당 파라미터가 JobInstance 식별에 사용될 파라미터인지 여부를 전달하는 것으로 `true` 이면 식별에 사용. 생략하는 경우
+  `true` 가 default
+
+```shell
+./gradlew bootRun --args='--spring.batch.job.name=dataProcessingJob inputFilePath=/data/input/users.csv,java.lang.String userCount=5,java.lang.Integer,false'
+```
+
+- 커맨드라인을 이용한 JobParameters 전달 방법
+- 여러 파라미터 전달시 공백을 활용
+
+### 다양한 타입의 Job 파라미터 지배하기
+
+1. 기본 데이터 타입 파라미터 전달
+  - SystemTerminatorConfig > processTerminatorJob 실행
+    ```shell
+    ./gradlew bootRun --args='--spring.batch.job.name=processTerminatorJob terminatorId=KILL-9,java.lang.String targetCount=5,java.lang.Integer'
+    ```
+  - `@Value` 를 사용해서 잡 파라미터를 전달받기 위해서는 `@StepScope` 와 같은 어노테이션이 필수
+
+2. 날짜와 시간 파라미터 전달 (`LocalDate`와 `LocalDateTime` 파라미터 전달)
