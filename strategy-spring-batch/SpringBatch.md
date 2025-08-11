@@ -72,10 +72,18 @@ Spring Batch
 ### 다양한 타입의 Job 파라미터 지배하기
 
 1. 기본 데이터 타입 파라미터 전달
-  - SystemTerminatorConfig > processTerminatorJob 실행
-    ```shell
-    ./gradlew bootRun --args='--spring.batch.job.name=processTerminatorJob terminatorId=KILL-9,java.lang.String targetCount=5,java.lang.Integer'
-    ```
-  - `@Value` 를 사용해서 잡 파라미터를 전달받기 위해서는 `@StepScope` 와 같은 어노테이션이 필수
+
+- SystemTerminatorConfig > processTerminatorJob 실행
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=processTerminatorJob terminatorId=KILL-9,java.lang.String targetCount=5,java.lang.Integer'
+  ```
+- `@Value` 를 사용해서 잡 파라미터를 전달받기 위해서는 `@StepScope` 와 같은 어노테이션이 필수
 
 2. 날짜와 시간 파라미터 전달 (`LocalDate`와 `LocalDateTime` 파라미터 전달)
+
+- TerminatorConfig > terminatorJob 실행
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=terminatorJob executionDate=2024-01-01,java.time.LocalDate startTime=2024-01-01T14:30:00,java.time.LocalDateTime'
+  ```
+- `executionDate`는 `yyyy-MM-dd`
+- `startTime`은 `yyyy-MM-ddThh:mm:ss` 형식을 사용

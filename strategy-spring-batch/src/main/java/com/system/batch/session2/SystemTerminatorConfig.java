@@ -18,22 +18,22 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class SystemTerminatorConfig {
   @Bean
-  public Job processTerminatorJob(JobRepository jobRepository, Step terminationStep) {
+  public Job processTerminatorJob(JobRepository jobRepository, Step processTerminationStep) {
     return new JobBuilder("processTerminatorJob", jobRepository)
-        .start(terminationStep)
+        .start(processTerminationStep)
         .build();
   }
 
   @Bean
-  public Step terminationStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, Tasklet terminatorTasklet) {
-    return new StepBuilder("terminationStep", jobRepository)
-        .tasklet(terminatorTasklet, transactionManager)
+  public Step processTerminationStep(JobRepository jobRepository, PlatformTransactionManager transactionManager, Tasklet processTerminationTasklet) {
+    return new StepBuilder("processTerminationStep", jobRepository)
+        .tasklet(processTerminationTasklet, transactionManager)
         .build();
   }
 
   @Bean
   @StepScope
-  public Tasklet terminatorTasklet(
+  public Tasklet processTerminationTasklet(
       @Value("#{jobParameters['terminatorId']}") String terminatorId,
       @Value("#{jobParameters['targetCount']}") int targetCount
   ) {
