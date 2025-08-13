@@ -158,3 +158,27 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-json'
 }
 ```
+
+- Configuration 클래스에 JobParameterConverter Bean 추가
+
+```java
+
+@Configuration
+public class BatchConfig {
+
+  @Bean
+  public JsonJobParametersConverter jobParameterConverter() {
+    return new JsonJobParametersConverter();
+  }
+}
+```
+
+- `@EnableBatchProcessing` 은 스프링 배치 5 이상에서는 필요하지 않음.
+
+```shell
+./gradlew bootRun --args="--spring.batch.job.name=jsonTerminationJob infiltrationTargets='{\"value\":\"판교서버실,안산데이터센터\",\"type\":\"java.lang.String\"}'"
+```
+
+```shell
+java -jar kill-batch-system-0.0.1-SNAPSHOT.jar --spring.batch.job.name=jsonTerminationJob infiltrationTargets='{"value":"판교_서버실,안산_데이터센터","type":"java.lang.String"}'
+```
