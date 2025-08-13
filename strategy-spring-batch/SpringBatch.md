@@ -101,3 +101,60 @@ Spring Batch
   ./gradlew bootRun --args='--spring.batch.job.name=enumTerminationJob questDifficulty=HARD,com.system.batch.session2.EnumTerminatorConfig$QuestDifficulty'
   ```
   - `Enum` 클래스인 `QuestDifficulty` 를 `$` 기호를 통해 외부/내부 클래스를 구분
+
+4. `POJO` 를 활용한 Job 파라미터 주입
+    ```java
+    @StepScope
+    @Component
+    public class SystemInfiltrationParameters {
+        private final String operationCommander;
+        @Value("#{jobParameters[missionName]}")
+        private String missionName;
+        private int securityLevel;
+        
+        public SystemInfiltrationParameters(
+        @Value("#{jobParameters['operationCommander']}") String operationCommander
+        ) {
+        this.operationCommander = operationCommander;
+        }
+        
+        @Value("#{jobParameters[securityLevel]")
+        public void setSecurityLevel(int securityLevel) {
+        this.securityLevel = securityLevel;
+        }
+    }
+    ```
+
+- `@Component` 애노테이션으로 Spring 빈 등록된다.
+- 잡 파라미터를 전달 받기 위해서는 `@StepScope` 와 같은 애노테이션이 필요하다
+- `@Value("#{jobParameters[...]}")` 어노테이션을 사용하여 다양한 방식으로 Job 을 주입받을 수 있다.
+- POJO 스프링 배치 커맨드 실행
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=pojoTerminationJob missionName=안산_데이터센터_침투,java.lang.String operationCommander=KILL-9 securityLevel=3,java.lang.Integer,false'
+  ```
+
+### 기존 파라미터 표기법의 한계
+
+- Spring Batch 의 기본 파라미터 표기법에는 한계가 있다. 예를 들어, 다음과 같은 파라미터를 보자.
+  - `infiltrationTargets=판교_서버실,안산_데이터센터,java.lang.String`
+  - 파라미터 값에 `,` 가 포함되면 어떻게 될까?
+  - `ClassNotFoundException` 에러가 발생한다.
+  - **Spring Batch 5** 부터는 `JSON` 기반의 파라미터 표기법을 새롭게 제공한다.
+
+### JobParameters 의 JSON 기반 표기법
+
+```text
+infiltrationTargets='{"value": "판교_서버실,안산_데이터센터", "type": "java.lang.String"}'
+```
+
+- 표기법 구성 요소들 `value`, `type`, `identifying` 은 기본 표기법과 동일한 의미를 가진다.
+- `identifying` 은 생략이 가능하다.
+
+### JSON 기반 파리미터 표기법 사용을 위한 준비
+
+```groovy
+dependencies {
+    // 기존 다른 의존성들...
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+}
+```
