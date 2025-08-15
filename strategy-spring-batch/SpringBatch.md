@@ -175,10 +175,84 @@ public class BatchConfig {
 
 - `@EnableBatchProcessing` 은 스프링 배치 5 이상에서는 필요하지 않음.
 
-```shell
-./gradlew bootRun --args="--spring.batch.job.name=jsonTerminationJob infiltrationTargets='{\"value\":\"판교서버실,안산데이터센터\",\"type\":\"java.lang.String\"}'"
+- 커맨드 라인 실행
+  ```shell
+  ./gradlew bootRun --args="--spring.batch.job.name=jsonTerminationJob infiltrationTargets='{\"value\":\"판교서버실,안산데이터센터\",\"type\":\"java.lang.String\"}'"
+  ```
+  - `Gradle` 로 실행할 때는 `"` 를 이스케이프 처리해 주어야 함
+- `java -jar` 명령어로 실행시 JSON 파라미터 표기법을 그대로 사용할 수 있음
+  ```shell
+  java -jar kill-batch-system-0.0.1-SNAPSHOT.jar --spring.batch.job.name=jsonTerminationJob infiltrationTargets='{"value":"판교_서버실,안산_데이터센터","type":"java.lang.String"}'
+  ```
+- `Intellij` program arguments 입력 시
+  ```text
+  --spring.batch.job.name=terminatorJob infiltrationTargets={\"value\":\"판교_서버실,안산_데이터센터\",\"type\":\"java.lang.String\"}
+  ```
+
+### 커맨드라인 파라미터는 어떻게 실제 Job 으로 전달될까?
+
+- 애플리케이션 구동시 `JobLauncherApplicationRunner` 라는 컴포넌트가 자동으로 동작
+- 해당 컴포넌트는 `ApplicationRunner`의 한 종류로, 커맨드라인으로 전달된 Spring Batch JobParameters 를 해석하고 Job 실행의 역할을 맡음
+
+**JobLauncherApplicationRunner** 처리 과정
+
+1. Job 목록 준비: `ApplicationContext` 에 등록된 모든 Job 타입 bean 이 JobLauncherApplicationRunner 에 자동 주입
+2. 유효성 검증
+
+- 만약, Job 타입의 빈이 여러개인데 `--spring.batch.job.name` 을 지정하지 않는 경우 검증 실패.
+- 전달한 `job.name` 을 찾을 수 없는 경우 검증 실패
+
+3. 명령어 해석: 커맨드라인으로 전달된 값을 파싱. `key=value` 형태의 인자들을 JobParameters 로 변환. 이 과정에서 `DefaultJobParametersConverter`(또는
+   `JsonJobParametersConverter`) 가 사용되어 문자열을 변환
+4. Job 실행: 주입받은 Job 목록에서 `--spring.batch.job.name` 에 해당하는 Job 찾기. 해당하는 Job 을 앞서 변환된 `JobParameters`와 함께 실행한다. 이 과정에서
+   `JobLauncher` 라는 Job 을 실행시키는 컴포넌트가 사용됨
+
+### 프로그래밍 방식으로 JobParameters 생성/전달하기
+
+프로그래밍 방식으로 JobParameters를 생성/전달하려면 `JobParametersBuilder` 라는 컴포넌트가 필요
+
+```java
+JobParameters jobParameters = new JobParametersBuilder()
+    .addJobParameter("inputFilePath", "/data/input/users.csv", String.class)
+    .toJobParameters();
+jobLauncher.
+
+run(dataProcessingJob, jobParameters);
 ```
 
-```shell
-java -jar kill-batch-system-0.0.1-SNAPSHOT.jar --spring.batch.job.name=jsonTerminationJob infiltrationTargets='{"value":"판교_서버실,안산_데이터센터","type":"java.lang.String"}'
+### JobParametersValidator
+
+JobParametersValidator 를 사용하면 잘못된 파라미터가 들어오는 순간 즉시 차단할 수 있다.
+
+```java
+public interface JobParametersValidator {
+  void validate(@Nullable JobParameters parameters) throws JobParametersInvalidException;
+}
 ```
+
+- JobParametersValidator 는 하나의 메서드를 가진다.
+- `SystemDestructionJob` 의 실행
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=systemDestructionJob destructionPower=6,java.lang.Long'
+  ```
+- 실행전 BatchConfig 의 jobParameterConverter 확인 (주석 처리)
+- 파라미터 검증을 위매 매번 `JobParametersValidator` 를 구현하는 대신 `DefaultJobParametersValidator` 를 활용할 수 있다.
+  - 단순히, 파라미터의 존재 여부만 확인하면 되는 경우 가능 가능하다.
+  ```java
+  @Bean
+  public Job defaultSystemDestructionJob(JobRepository jobRepository, Step systemDestructionStep) {
+    return new JobBuilder("defaultSystemDestructionJob", jobRepository)
+        .validator(new DefaultJobParametersValidator(
+            new String[]{"destructionPower"},  // 필수 파라미터
+            new String[]{"targetSystem"}       // 선택적 파라미터
+        )).start(systemDestructionStep)
+        .build();
+  }
+  ```
+  - `destructionPower`: 필수
+  - `targetSystem`: 선택적
+  - 그 외의 파라미터는 허용하지 않음
+  - 필수 파라미터의 존재 여부만 전달하고 선택적 파라미터는 자유롭게 두고 싶다면 `new String[]{}` 를 전달하면 된다.
+  ```shell
+  ./gradlew bootRun --args='--spring.batch.job.name=defaultSystemDestructionJob destructionPower=10,java.lang.Long, targetSystem=duckbill'
+  ```
