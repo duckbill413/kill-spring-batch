@@ -1,4 +1,4 @@
-package com.system.batch.session2;
+package com.system.batch.session2.작전2;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;

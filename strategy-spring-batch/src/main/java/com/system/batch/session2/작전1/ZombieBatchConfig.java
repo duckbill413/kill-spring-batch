@@ -1,4 +1,4 @@
-package com.system.batch.session2;
+package com.system.batch.session2.작전1;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;

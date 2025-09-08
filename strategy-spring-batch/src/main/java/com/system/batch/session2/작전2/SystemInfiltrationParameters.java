@@ -1,4 +1,4 @@
-package com.system.batch.session2;
+package com.system.batch.session2.작전2;
 
 import lombok.Getter;
 import org.springframework.batch.core.configuration.annotation.StepScope;
