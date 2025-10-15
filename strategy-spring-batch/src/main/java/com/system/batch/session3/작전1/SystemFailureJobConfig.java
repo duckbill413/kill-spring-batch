@@ -54,14 +54,14 @@ public class SystemFailureJobConfig {
 
     return new FlatFileItemReaderBuilder<SystemFailure>()
         .name("systemFailureItemReader")
-        .linesToSkip(1) // 헤더 라인은 실제 처리할 데이터가 아니므로 건너뜀
         .comments("#")
         .resource(new FileSystemResource(inputFile))
         .delimited()
         .delimiter(",")
         .names("errorId", "errorDateTime", "severity", "processId", "errorMessage")
         .targetType(SystemFailure.class)
-        .linesToSkip(1)
+        .linesToSkip(1) // 헤더 라인은 실제 처리할 데이터가 아니므로 건너뜀
+        .strict(true) // 파일과 데이터 검증의 강도를 설정하는 메서드로, 기본값은 true 이다. 이 경우 파일 누락 시 예외를 발생시켜 배치를 중단하고, false면 파일이 존재하지 않아도 경고만 남기고 진행한다
         .build();
   }
 
