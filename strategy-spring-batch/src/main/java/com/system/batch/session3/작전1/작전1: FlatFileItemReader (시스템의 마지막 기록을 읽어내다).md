@@ -85,4 +85,34 @@ public FlatFileItemReader<SystemFailure> systemFailureItemReader(
   예외를 발생시킨다.
 - `names()`와 `targetType()`: 구분자로 구분된 형식의 파일을 처리할 때와 동일하게 동작한다.
 
+### 프로퍼티 타입에 LocalDateTime 을 쓰고 싶다면?
+
+`BeanWrapperFieldSetMapper`는 기본적인 타입 변환을 지원하지만, LocalDateTime 과 같은 복잡한 타입은 별도의 변환기가 필요하다.  
+다행히 FlatFileItemReaderBuilder 의 `customEditors()` 메서들르 사용하면 커스텀 PropertyEditor 를 등록할 수 있다.
+
+```java
+
+@Bean
+@StepScope
+public FlatFileItemReader<SystemFailure> systemFailureItemReader(
+    @Value("#{jobParameters['inputFile']}") String inputFile) {
+  return new FlatFileItemReaderBuilder<SystemFailure>()
+      // ... 기존 설정 동일 ...
+      .customEditors(Map.of(LocalDateTime.class, dateTimeEditor()))
+      .build();
+}
+
+private PropertyEditor dateTimeEditor() {
+  return new PropertyEditorSupport() {
+    @Override
+    public void setAsText(String text) {
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      setValue(LocalDateTime.parse(text, formatter));
+    }
+  };
+}
+
+```
+
 ---
+
