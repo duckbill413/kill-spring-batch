@@ -114,5 +114,41 @@ private PropertyEditor dateTimeEditor() {
 
 ```
 
+### RegexLine Tokenizer 사용하기
+
+RegexLineTokenizer 를 사용하여 로그 파일에서 Thread 번호와 에러 메시지를 추출하는 예제를 살펴보자  
+[LogAnalysisJobConfig](LogAnalysisJobConfig.java)
+
+RegexLineTokenizer 구성
+
+- 구조가 복잡하고 라인의 길이도 가변적인 경우, 정규식을 활용한 RegexLineTokenizer 가 유용한 도구가 된다.
+
+```text
+tokenizer.setRegex("\\[\\w+\\]\\[Thread-(\\d+)\\]\\[CPU: \\d+%\\] (.+)");
+```
+
+- `\\[\\\\w+\\]`: 대괄호 안의 로그 레벨(예: WARNING, ERROR)을 패턴으로 매칭한다. 이 부분은 분석 대상에서 제외된다.
+- `\\[Thread-(\\\\d+)\\]`: 스레드 번호에 해당하는 두 번째 대괄호 안에서 Thread- 뒤에 나오는 숫자가 첫 번째 그룹으로 캡처된다.
+- `\\[CPU: \\\\d+%\\]`: CPU 사용량을 나타내는 부분이다. 이건 로그 메시지 파싱엔 필요 없으니 건너뛴다.
+- `(.+)`: 마지막으로 로그 메시지를 전부 가져오는 부분이다. 이게 두 번째 그룹으로 캡처된다.
+
+`fieldSetMapper()` 로 LogEntry 매핑
+
+- 커스텀 LineTokenizer 설정뿐만 아니라 FlatFileItemReaderBuilder 는 커스텀 FieldSetMapper 를 구성할 수 있는 유연한 메서드를 제공한다.
+
+실행)
+
+1. 파일 생성
+
+```shell
+echo -e "[WARNING][Thread-156][CPU: 78%] Thread pool saturation detected - 45/50 threads in use...\n[ERROR][Thread-157][CPU: 92%] Thread deadlock detected between Thread-157 and Thread-159\n[FATAL][Thread-159][CPU: 95%] Thread dump initiated - system unresponsive for 30s" > log.txt
+```
+
+2. bootRun 실행
+
+```shell
+./gradlew bootRun --args='--spring.batch.job.name=logAnalysisJob inputFile=src/main/java/com/system/batch/session3/작전1/log.txt'
+```
+
 ---
 
