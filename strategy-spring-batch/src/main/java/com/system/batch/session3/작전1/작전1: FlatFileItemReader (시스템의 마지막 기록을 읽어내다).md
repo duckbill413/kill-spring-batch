@@ -152,3 +152,45 @@ echo -e "[WARNING][Thread-156][CPU: 78%] Thread pool saturation detected - 45/50
 
 ---
 
+## PatternMatchingCompositeLineMapper 사용하기
+
+```text
+ERROR,mysql-prod,OOM,2024-01-24T09:30:00,heap space killing spree,85%,/var/log/mysql
+ABORT,spring-batch,MemoryLeak,2024-01-24T10:15:30,forced termination,-1,/usr/apps/batch,TERMINATED
+COLLECT,heap-dump,PID-9012,2024-01-24T11:00:15,/tmp/heapdump
+ERROR,redis-cache,SocketTimeout,2024-01-24T13:45:00,connection timeout,92%,/var/log/redis
+ABORT,zombie-process,Deadlock,2024-01-24T13:46:20,kill -9 executed,-1,/proc/dead,TERMINATED
+```
+
+- 이 로그 파일에는 세 가지 유형의 시스템 처리 기록이 있다.
+  - ERROR: 장애 발생 이벤트 (시스템의 비정상 징후)
+    - 형식: `타입,애플리케이션,장애유형,발생시각,메시지,리소스사용률,로그경로`
+  - ABORT: 프로세스 중단 이벤트 (비정상 프로세스 제거)
+    - 형식: `타입,애플리케이션,장애유형,중단시각,중단사유,종료코드,프로세스경로,상태`
+  - COLLECT: 사후 분석 이벤트
+    - 형식: `타입,덤프종류,프로세스ID,수집시각,저장경로`
+- 기본으로 사용되는 LineMapper 구현체인 DefaultLineMapper 는 하나의 LineTokenizer 와 하나의 `FieldSetMapper` 만을 가지고 있어 이러한 다양한 형식의 파일을 처리할 수
+  없다.
+- 이러 상황에서 `PatternMatchingCompositeLineMapper` 를 사용할 수 있다. 이 특별한 LineMapper 구현체는 Ant 스타일의 패턴 매칭을 지원하며, 각 라인의 패턴에 따라 다른
+  LineTokenizer 와 FieldSetMapper 를 적용할 수 있다. 예를 들어 ERROR 로 직하는 모든 라인에는 `"ERROR*" 패턴에 지정된 `LineTokenizer` 와 `
+  FieldSetMapper` 가 적용된다.
+
+1. 시스템 로그 파일 생성
+
+```shell
+echo -e "ERROR,mysql-prod,OOM,2024-01-24T09:30:00,heap space killing spree,85%,/var/log/mysql\nABORT,spring-batch,MemoryLeak,2024-01-24T10:15:30,forced termination,-1,/usr/apps/batch,TERMINATED\nCOLLECT,heap-dump,PID-9012,2024-01-24T11:00:15,/tmp/heapdump\nERROR,redis-cache,SocketTimeout,2024-01-24T13:45:00,connection timeout,92%,/var/log/redis\nABORT,zombie-process,Deadlock,2024-01-24T13:46:20,kill -9 executed,-1,/proc/dead,TERMINATED" > system-events.log
+```
+
+2. bootRun 실행
+
+```shell
+./gradlew bootRun --args='--spring.batch.job.name=systemLogJob inputFile=src/main/java/com/system/batch/session3/작전1/system-events.log'
+```
+
+```text
+SystemLogJobConfig.ErrorLog(super=SystemLogJobConfig.SystemLog(type=ERROR, timestamp=2024-01-24T09:30:00), application=mysql-prod, errorType=OOM, message=heap space killing spree, resourceUsage=85%, logPath=/var/log/mysql)
+SystemLogJobConfig.AbortLog(super=SystemLogJobConfig.SystemLog(type=ABORT, timestamp=2024-01-24T10:15:30), application=spring-batch, errorType=MemoryLeak, message=forced termination, exitCode=-1, processPath=/usr/apps/batch, status=TERMINATED)
+SystemLogJobConfig.CollectLog(super=SystemLogJobConfig.SystemLog(type=COLLECT, timestamp=2024-01-24T11:00:15), dumpType=heap-dump, processId=PID-9012, dumpPath=/tmp/heapdump)
+SystemLogJobConfig.ErrorLog(super=SystemLogJobConfig.SystemLog(type=ERROR, timestamp=2024-01-24T13:45:00), application=redis-cache, errorType=SocketTimeout, message=connection timeout, resourceUsage=92%, logPath=/var/log/redis)
+SystemLogJobConfig.AbortLog(super=SystemLogJobConfig.SystemLog(type=ABORT, timestamp=2024-01-24T13:46:20), application=zombie-process, errorType=Deadlock, message=kill -9 executed, exitCode=-1, processPath=/proc/dead, status=TERMINATED)
+```
