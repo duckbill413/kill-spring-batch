@@ -26,8 +26,30 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'org.springframework.boot:spring-boot-starter-json'
+
+    // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
+
+    // https://mvnrepository.com/artifact/com.github.jsqlparser/jsqlparser
+    implementation 'com.github.jsqlparser:jsqlparser:5.3'
+
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+    implementation 'org.apache.commons:commons-csv:1.14.1'
+
+    // https://mvnrepository.com/artifact/com.github.f4b6a3/ulid-creator
+    implementation 'com.github.f4b6a3:ulid-creator:5.2.3'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+
+// 아래의 주석을 제외하고 gradlew 명령어를 실행하여 jar 파일을 다운 받을 수 있음
+
+//task downloadDependencies(type: Copy) {
+//    from configurations.runtimeClasspath
+//    into 'libs' // 프로젝트 루트의 libs 폴더로 모든 jar를 복사함
+//}
+//
+//./gradlew downloadDependencies

@@ -1,6 +1,7 @@
 package com.system.batch.session3.작전1;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -165,6 +166,7 @@ public class SystemLogJobConfig {
   }
 
   @Data
+  @EqualsAndHashCode(callSuper = true)
   @ToString(callSuper = true)
   public static class ErrorLog extends SystemLog {
     private String application;
@@ -175,6 +177,7 @@ public class SystemLogJobConfig {
   }
 
   @Data
+  @EqualsAndHashCode(callSuper = true)
   @ToString(callSuper = true)
   public static class AbortLog extends SystemLog {
     private String application;
@@ -186,6 +189,7 @@ public class SystemLogJobConfig {
   }
 
   @Data
+  @EqualsAndHashCode(callSuper = true)
   @ToString(callSuper = true)
   public static class CollectLog extends SystemLog {
     private String dumpType;

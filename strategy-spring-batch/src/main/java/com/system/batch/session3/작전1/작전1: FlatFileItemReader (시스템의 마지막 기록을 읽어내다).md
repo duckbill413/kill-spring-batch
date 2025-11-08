@@ -194,3 +194,50 @@ SystemLogJobConfig.CollectLog(super=SystemLogJobConfig.SystemLog(type=COLLECT, t
 SystemLogJobConfig.ErrorLog(super=SystemLogJobConfig.SystemLog(type=ERROR, timestamp=2024-01-24T13:45:00), application=redis-cache, errorType=SocketTimeout, message=connection timeout, resourceUsage=92%, logPath=/var/log/redis)
 SystemLogJobConfig.AbortLog(super=SystemLogJobConfig.SystemLog(type=ABORT, timestamp=2024-01-24T13:46:20), application=zombie-process, errorType=Deadlock, message=kill -9 executed, exitCode=-1, processPath=/proc/dead, status=TERMINATED)
 ```
+
+## RecordFieldSetMapper: Record 매핑 지원
+
+- 파일 데이터를 record 로 매핑하는 간단한 예제를 살펴보자
+
+```text
+command,cpu,status
+destroy,99,memory overflow
+explode,100,cpu meltdown
+collapse,95,disk burnout
+```
+
+위와 같은 데이터를 아래에 매핑
+
+```java
+public record SystemDeath(String command, int cpu, String status) {
+}
+```
+
+```java
+import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.FileSystemResource;
+
+@Bean
+@StepScope
+public FlatFileItemReader<SystemDeath> systemDeathReader(
+    @Value("#{jobParameters['inputFile']}") String inputFile) {
+  return new FlatFileItemReaderBuilder<SystemDeath>()
+      .name("systemDeathReader")
+      .resource(new FileSystemResource(inputFile))
+      .delimited()
+      .names("command", "cpu", "status")
+      .targetType(SystemDeath.class)
+      .linesToSkip(1)
+      .build();
+}
+```
+
+- `FlatFileItemReaderBuilder` 의 `targetType()` 메서드 호출을 보자. `targetType()` 메서드에 record 를 전달하면 Spring Batch 는 내부적으로
+  `BeanWrapperFieldSetMapper` 대신 `BeanFieldSetMapper` 를 사용한다.
+- `BeanWrapperFieldSetMapper` 가 객체의 `setter` 를 사용하여 데이터를 바인딩하는 것과 달리, `RecordFieldSetMapper` 는 `record` 의 canonical
+  constructor 를 사용해 매핑한다.
+
