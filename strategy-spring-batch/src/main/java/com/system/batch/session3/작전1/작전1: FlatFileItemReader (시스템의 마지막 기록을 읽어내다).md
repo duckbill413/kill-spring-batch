@@ -241,3 +241,42 @@ public FlatFileItemReader<SystemDeath> systemDeathReader(
 - `BeanWrapperFieldSetMapper` 가 객체의 `setter` 를 사용하여 데이터를 바인딩하는 것과 달리, `RecordFieldSetMapper` 는 `record` 의 canonical
   constructor 를 사용해 매핑한다.
 
+## MultiResourceItemReader: 여러 파일 읽기
+
+- `MultiResourceItemReader` 는 여러 파일을 순차적으로 읽을 수 있게 해주는 ItemReader 구현체이다.
+- [[실습 클래스] SystemFailureMultiFileConfig](SystemFailureMultiFileConfig.java)
+- `MultiResourceItemReader` 는 기본적으로 파일명의 알파벳 순서로 파일을 읽는다.
+  - 파일 처리 순서를 다르게 설정하고 싶은 경우 `comparator()` 메서드를 사용하여 정렬할 수 있다.
+  ```java
+  .comparator((r1, r2) -> r2.getFilename().compareTo(r1.getFilename())
+  ```
+- `delegate()`
+  - `ItemReader` 구성에서 `resource()` 호출이 없어졌다. 이는 resource 를 MultiResourceItemReader 에서 리소스를 지정해 주기 때문이다.
+
+1. MultiResourceItemReader가 systemFailureFileReader에게 critical-failures.csv 로부터 데이터를 읽도록 명령한다.(파일명 알파벳 순서로 인해
+   critical-failures.csv 가 먼저 선택됨)
+2. critical-failures.csv를 전부 읽어 더 이상 읽어들일 레코드가 없을 경우, MultiResourceItemReader는 normal-failures.csv를 읽도록
+   systemFailureFileReader에 명령한다.
+3. normal-failures.csv까지 모두 읽으면 모든 파일 처리가 완료된다.
+
+이러한 방식으로 MultiResourceItemReader는 여러 파일을 마치 하나의 큰 파일처럼 연속적으로 처리할 수 있게 해준다.
+
+### 실습
+
+1. 실습 파일 준비
+
+```shell
+# critical-failures.csv 생성
+echo -e "에러ID,발생시각,심각도,프로세스ID,에러메시지\nERR001,2024-01-19 10:15:23,CRITICAL,1234,SYSTEM_CRASH\nERR002,2024-01-19 10:15:25,FATAL,1235,MEMORY_OVERFLOW\nERR003,2024-01-19 10:16:10,CRITICAL,1236,DATABASE_CORRUPTION" > critical-failures.csv
+
+# normal-failures.csv 생성
+echo -e "에러ID,발생시각,심각도,프로세스ID,에러메시지\nERR101,2024-01-19 10:20:30,WARN,2001,HIGH_CPU_USAGE\nERR102,2024-01-19 10:21:15,INFO,2002,CACHE_MISS\nERR103,2024-01-19 10:22:45,WARN,2003,SLOW_QUERY_DETECTED" > normal-failures.csv
+```
+
+2. 실행
+
+```shell
+./gradlew bootRun --args='--spring.batch.job.name=systemFailureJob inputFilePath=/path-to-kill-batch-system'
+```
+
+- path 수정이 필요함
